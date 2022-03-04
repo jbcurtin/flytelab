@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+flytekit = ">=0.30.3"
+pandas = "*"
+s3fs = "*"
+sklearn = "*"
+
+[dev-packages]
+docker = "*"
+streamlit = "*"
+typer = "*"
+gitpython = "*"
+
+[requires]
+python_version = "3.8"
