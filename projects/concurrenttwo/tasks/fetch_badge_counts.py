@@ -20,7 +20,7 @@ def load_steamids_from_raw(*, jsonfile: str) -> List[str]:
     return steam_ids
 
 
-def get_personaname_from_id(*, steamids: List[str]) -> List[str]:
+def get_personaname_from_id(*, steamids: List[str], checkpoint: int = 50) -> List[str]:
     """YOLO. Not doing async or threading to spam the site. Use a timer to wait for
     less than 0.5s. Will have to wait patiently.
 
@@ -42,18 +42,20 @@ def get_personaname_from_id(*, steamids: List[str]) -> List[str]:
     key = '"personaname":"(.*?)"'
     prefix = "https://steamcommunity.com/profiles/"
     steamid_personaname_mapping = {}
+    out_file = "dataset/raw/steamid_personaname_mapping.json"
 
-    for steamid in tqdm(steamids):
+    for idx, steamid in enumerate(tqdm(steamids)):
         url = prefix + steamid
         response = requests.get(url, headers=headers)
         name = re.findall(key, response.text)
         if name:
             steamid_personaname_mapping[steamid] = name[0]
 
-        time.sleep(random.uniform(0, 0.3))
+        if idx % checkpoint == 0:
+            with open(out_file, "w", encoding="utf-8") as jsonfile:
+                json.dump(steamid_personaname_mapping, jsonfile)
 
-    with open("steamid_personaname_mapping.json", "w", encoding="utf-8") as jsonfile:
-        json.dump(steamid_personaname_mapping, jsonfile)
+        time.sleep(random.uniform(0, 0.3))
 
     return steamid_personaname_mapping
 
