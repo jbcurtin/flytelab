@@ -44,7 +44,7 @@ def get_personaname_from_id(*, steamids: List[str], checkpoint: int = 50) -> Lis
     steamid_personaname_mapping = {}
     out_file = "dataset/raw/steamid_personaname_mapping.json"
 
-    for idx, steamid in enumerate(tqdm(steamids[8250:])):
+    for idx, steamid in enumerate(tqdm(steamids[12492:])):
         url = prefix + steamid
         response = requests.get(url, headers=headers)
         name = re.findall(key, response.text)
@@ -56,6 +56,9 @@ def get_personaname_from_id(*, steamids: List[str], checkpoint: int = 50) -> Lis
                 json.dump(steamid_personaname_mapping, jsonfile)
 
         time.sleep(random.uniform(0, 0.3))
+
+    with open(out_file, "w", encoding="utf-8") as jsonfile:
+        json.dump(steamid_personaname_mapping, jsonfile)
 
     return steamid_personaname_mapping
 
