@@ -1,13 +1,13 @@
 import json
 import os
-from random import randint
+import random
 import re
 import sys
 import time
 from typing import List
 
 import requests
-import tqdm
+from tqdm import tqdm
 
 sys.path.append(os.path.join(sys.path[0], ".."))
 
@@ -20,16 +20,14 @@ def load_steamids_from_raw(*, jsonfile: str) -> List[str]:
     return steam_ids
 
 
-def generate_urls(*, steam_ids: List[str]) -> List[str]:
-    prefix = "https://steamcommunity.com/profiles/"
-    return [prefix + id for id in steam_ids]
+def get_personaname_from_id(*, steamids: List[str]) -> List[str]:
+    """YOLO. Not doing async or threading to spam the site. Use a timer to wait for
+    less than 0.5s. Will have to wait patiently.
 
-
-def get_username_from_redirect_url(*, urls: List[str]) -> List[str]:
-    """YOLO. Not doing async or threading to spam the site. Will have to wait patiently.
+    Also, not sure how many names will the Regex match, so pick only the first entry.
 
     Args:
-        urls (List[str]): _description_
+        steamids (List[str]): _description_
 
     Returns:
         List[str]: _description_
@@ -42,27 +40,28 @@ def get_username_from_redirect_url(*, urls: List[str]) -> List[str]:
         "Content-Type": "text/html; charset=UTF-8",
     }
     key = '"personaname":"(.*?)"'
-    personanames = []
+    prefix = "https://steamcommunity.com/profiles/"
+    steamid_personaname_mapping = {}
 
-    for url in tqdm(urls):
+    for steamid in tqdm(steamids):
+        url = prefix + steamid
         response = requests.get(url, headers=headers)
-        # Not sure how many names will the Regex match, so pick only the first entry
-        name = print(re.findall(key, response.texte))
+        name = re.findall(key, response.text)
         if name:
-            personanames.append(name[0])
-        time.sleep(randint(0, 2))
+            steamid_personaname_mapping[steamid] = name[0]
 
-    with open("personanames.json", "w", encoding="utf-8") as jsonfile:
-        json.dump(personanames, jsonfile)
+        time.sleep(random.uniform(0, 0.3))
 
-    return personanames
+    with open("steamid_personaname_mapping.json", "w", encoding="utf-8") as jsonfile:
+        json.dump(steamid_personaname_mapping, jsonfile)
+
+    return steamid_personaname_mapping
 
 
 def main():
-    RAW_REVIEW_FILE = "data/raw/json-reviews.json"
+    RAW_REVIEW_FILE = "dataset/raw/json-reviews.json"
     steam_ids = load_steamids_from_raw(jsonfile=RAW_REVIEW_FILE)
-    steam_urls = generate_urls(steam_ids=steam_ids)
-    personanames = get_username_from_redirect_url(urls=steam_urls)
+    personanames = get_personaname_from_id(steamids=steam_ids)
     print(personanames[-1])
 
 
