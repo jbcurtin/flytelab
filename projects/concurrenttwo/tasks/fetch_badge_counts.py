@@ -4,7 +4,7 @@ import random
 import re
 import sys
 import time
-from typing import List
+from typing import Dict, List
 
 import requests
 from tqdm import tqdm
@@ -20,7 +20,9 @@ def load_steamids_from_raw(*, jsonfile: str) -> List[str]:
     return steam_ids
 
 
-def get_personaname_from_id(*, steamids: List[str], checkpoint: int = 50) -> List[str]:
+def get_personaname_from_id(
+    *, steamids: List[str], checkpoint: int = 50
+) -> Dict[str, str]:
     """YOLO. Not doing async or threading to spam the site. Use a timer to wait for
     less than 0.5s. Will have to wait patiently.
 
@@ -63,11 +65,34 @@ def get_personaname_from_id(*, steamids: List[str], checkpoint: int = 50) -> Lis
     return steamid_personaname_mapping
 
 
+def download_review_pages(*, personaname_file: str):
+    """Downloads the review pages for each personaname.
+
+    Args:
+        personanames (str): _description_
+    """
+    with open(personaname_file, "r") as jsonfile:
+        personaname_mapping = json.load(jsonfile)
+
+    URL_TEMPLATE = "https://steamcommunity.com/id/{}/recommended/1245620/"
+    HTML_FILE_TEMPLATE = "dataset/raw/review_htmls/{}.html"
+
+    for steamid, personaname in tqdm(personaname_mapping.items()):
+        url = URL_TEMPLATE.format(personaname)
+        response = requests.get(url)
+        with open(
+            HTML_FILE_TEMPLATE.format(steamid), "w", encoding="utf-8"
+        ) as html_file:
+            html_file.write(response.text)
+
+
 def main():
-    RAW_REVIEW_FILE = "dataset/raw/json-reviews.json"
-    steam_ids = load_steamids_from_raw(jsonfile=RAW_REVIEW_FILE)
-    personanames = get_personaname_from_id(steamids=steam_ids)
-    print(personanames[-1])
+    # RAW_REVIEW_FILE = "dataset/raw/json-reviews.json"
+    # steam_ids = load_steamids_from_raw(jsonfile=RAW_REVIEW_FILE)
+    # _ = get_personaname_from_id(steamids=steam_ids)
+
+    PERSONA_FILE = "dataset/raw/steamid_personaname_mapping.json"
+    download_review_pages(personaname_file=PERSONA_FILE)
 
 
 if __name__ == "__main__":
